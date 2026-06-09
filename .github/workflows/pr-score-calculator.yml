@@ -27,43 +27,62 @@ jobs:
               return;
             }
             
-            let points = 0;
-            let levelFound = null;
+            let difficultyPoints = 0;
+            let levelFound = 'None';
             
-            // Base difficulty points
-            if (labels.includes('level:beginner')) { points += 10; levelFound = 'Beginner'; }
-            else if (labels.includes('level:intermediate')) { points += 25; levelFound = 'Intermediate'; }
-            else if (labels.includes('level:advanced')) { points += 45; levelFound = 'Advanced'; }
-            else if (labels.includes('level:critical')) { points += 80; levelFound = 'Critical'; }
+            // 1. Difficulty Points
+            if (labels.includes('level:critical')) { difficultyPoints = 80; levelFound = 'Critical'; }
+            else if (labels.includes('level:advanced')) { difficultyPoints = 55; levelFound = 'Advanced'; }
+            else if (labels.includes('level:intermediate')) { difficultyPoints = 35; levelFound = 'Intermediate'; }
+            else if (labels.includes('level:beginner')) { difficultyPoints = 20; levelFound = 'Beginner'; }
             
-            // If no level is found, we still give a base score of 5
-            if (!levelFound) {
-              points += 5;
-              levelFound = 'Unclassified';
-            }
+            let typePoints = 0;
+            let typeFound = 'Other';
             
-            // Quality Multipliers / Bonuses
-            let qualityBonus = 0;
+            // 2. Contribution Type Points
+            if (labels.includes('type:security')) { typePoints = 20; typeFound = 'Security'; }
+            else if (labels.includes('type:devops')) { typePoints = 15; typeFound = 'DevOps'; }
+            else if (labels.includes('type:performance')) { typePoints = 15; typeFound = 'Performance'; }
+            else if (labels.includes('type:bug')) { typePoints = 10; typeFound = 'Bug'; }
+            else if (labels.includes('type:feature')) { typePoints = 10; typeFound = 'Feature'; }
+            else if (labels.includes('type:testing')) { typePoints = 10; typeFound = 'Testing'; }
+            else if (labels.includes('type:refactor')) { typePoints = 10; typeFound = 'Refactor'; }
+            else if (labels.includes('type:design')) { typePoints = 10; typeFound = 'Design'; }
+            else if (labels.includes('type:docs')) { typePoints = 5; typeFound = 'Docs'; }
+            else { typePoints = 15; } // Default for 'other'
+            
+            let basePoints = difficultyPoints + typePoints;
+            
+            // 3. Quality Multiplier
+            let qualityMultiplier = 1.0;
+            let qualityLevel = 'Clean';
+            
             if (labels.includes('quality:exceptional')) {
-              qualityBonus = Math.round(points * 0.5); // 50% bonus
-              points += qualityBonus;
+              qualityMultiplier = 1.5;
+              qualityLevel = 'Exceptional';
             } else if (labels.includes('quality:clean')) {
-              qualityBonus = Math.round(points * 0.2); // 20% bonus
-              points += qualityBonus;
+              qualityMultiplier = 1.0;
+              qualityLevel = 'Clean';
             }
+            
+            let totalPoints = Math.round(basePoints * qualityMultiplier);
             
             const contributor = pr.user.login;
             
             const message = `
             🎉 **Congratulations @${contributor}! Your PR has been merged!** 🎉
             
-            Thank you for your contribution to **ConsentFlow** for GSSoC '26! Here is your score breakdown for this PR:
+            Thank you for your contribution to **ConsentFlow** for GSSoC '26! Here is your official score breakdown for this PR:
             
-            - **Difficulty Level:** ${levelFound}
-            - **Base Points:** ${points - qualityBonus}
-            - **Quality Bonus:** +${qualityBonus}
+            ### 📊 Score Breakdown
+            | Category | Category Label | Points |
+            |----------|----------------|--------|
+            | **Difficulty** | \`${levelFound}\` | ${difficultyPoints} |
+            | **Type** | \`${typeFound}\` | ${typePoints} |
+            | **Base Score** | | **${basePoints}** |
+            | **Quality Multiplier** | \`${qualityLevel}\` | **x${qualityMultiplier}** |
             
-            ### 🏆 Total Points Awarded: **${points}**
+            ### 🏆 Total Points Awarded: **${totalPoints}**
             
             Keep up the fantastic work! 🚀
             `;
